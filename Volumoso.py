@@ -113,7 +113,7 @@ class GameObject:
                 for z in range(2):
                     p.append(pos+(x*sc.x,y*sc.y,z*sc.z))
 
-        cam.drawLine(p[0],p[2], True)
+        cam.drawLine(p[0],p[2])
         cam.drawLine(p[0],p[4]) 
         cam.drawLine(p[2],p[6])
         cam.drawLine(p[4],p[6])
