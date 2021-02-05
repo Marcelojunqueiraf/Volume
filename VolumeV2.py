@@ -63,9 +63,6 @@ class Vector3:
     @property
     def magnitude(self): #get the vector's magnitude
         return (self.x**2 + self.y**2 + self.z**2)**(1/3)
-    @property
-    def angle(self): #gets the vector's angle arround the y axis and the angle relative to the horizontal plane
-        return Angle((math.atan2(self.z, self.x), math.atan2(self.y,math.hypot(self.x, self.z))))
     
     def translate(self, value): #Adds a vector to self's vector
         self.coords = (self.x+value.x, self.y+value.y, self.z+value.z)
@@ -92,52 +89,22 @@ class Vector3:
         self.y = math.sin(ang)*m
         self.x = math.cos(ang)*m
 
-    def rotate(self, ang = Angle((0,0))): #Changes the angle of the vector making changes in it's values
-        x = math.atan2(self.z, self.x) +ang.x
-        m = math.hypot(self.z, self.x)
-        self.z = math.sin(x)*m
-        self.x = math.cos(x)*m
-        y = math.atan2(self.y, self.z) -ang.y
-        m = math.hypot(self.y, self.z)
-        self.y = math.sin(y)*m
-        self.z = math.cos(y)*m
-
-class Transform: #A class that stores a position, an rotation and a scale
-    
-    def __init__(self, pos=(0,0,0), rot=(0,0), sc=(10,10,10)):
-        self.position = Vector3(pos)
-        self.rotation = Angle(rot)
-        self.scale = Vector3(sc)
-
-    def __str__(self):
-        return 'p = {}, r = {}, s = {}'.format(self.position,self.rotation, self.scale)
-    
-    def move(self, v):
-        if type(v)==tuple:
-            v = Vector3(v)
-        v.rotateX(-self.rotation.y)
-        v.rotateY(-self.rotation.x)
-        self.position += v
-
-class Model:
-    def __init__(self):
-        a = 0
 
 
 class GameObject:
     allGO = []
-    def __init__(self, pos = (0, 0, 0), rot = (0, 0), sc = (10, 10, 10)):
-        self.transform = Transform(pos, rot, sc)
-        self.model = Model()
+    def __init__(self, pos = (0, 0, 0), sc = (10, 10, 10)):
+        self.position = Vector3(pos)
+        self.scale = Vector3(sc)
         self.allGO.append(self)
 
-    def drawAll(self, cam):
+    def drawAll(cam):
         for go in GameObject.allGO:
             go.draw(cam)
 
     def draw(self, cam): 
-        pos = self.transform.position
-        sc = self.transform.scale
+        pos = self.position
+        sc = self.scale
         pos += (-sc.x/2,-sc.y/2, -sc.z/2)
 
         p = []
@@ -146,8 +113,7 @@ class GameObject:
                 for z in range(2):
                     p.append(pos+(x*sc.x,y*sc.y,z*sc.z))
 
-        p[6].x += 5
-        cam.drawLine(p[0],p[2], True)
+        cam.drawLine(p[0],p[2])
         cam.drawLine(p[0],p[4]) 
         cam.drawLine(p[2],p[6])
         cam.drawLine(p[4],p[6])
@@ -163,12 +129,25 @@ class GameObject:
         cam.drawLine(p[4],p[5])
         cam.drawLine(p[6],p[7])
 
-
+#Class that defines how objects are rendered
 class Camera:
     def __init__(self, pos=(0,0,0), rot=(0,0), openning = 1):
-        self.transform = Transform(pos,rot,(1,1,1))
+        self.position = Vector3(pos)
+        self.rotation = rot
         self.op = openning #oppening is an angle in radians
 
+    #Change the camera's position
+    def move(self, v):
+        if type(v)==tuple:
+            v = Vector3(v)
+        v.rotateX(-self.rotation[1])
+        v.rotateY(-self.rotation[0])
+        self.position += v
+    #Change Camera's rotation
+    def rotate(self, a=(0,0)):
+        r = self.rotation
+        self.rotation = (r[0]+a[0],r[1]+a[1])
+    
     def ttt(self, o=(0,0,0), te = False):
         p = self.relativePos(o)
         d = math.tan(self.op/2)*p.z
@@ -181,10 +160,10 @@ class Camera:
 
     def relativePos(self, o):
         p = Vector3((0,0,0))+o
-        p -= self.transform.position
-        a = Angle(self.transform.rotation.pair)
-        p.rotateY(a.x)
-        p.rotateX(a.y)
+        p -= self.position
+        a = self.rotation
+        p.rotateY(a[0])
+        p.rotateX(a[1])
         return p
 
     def drawLine(self, a, b, te =False):
@@ -202,20 +181,20 @@ class Camera:
                 y = pr2.y+pr2.z*(pr1.y-pr2.y)/(pr1.z+pr2.z)
             else:
                 y = p1.y
-            p1 = self.ttt(Vector3((x, y, self.transform.position.z+0.1)))
+            p1 = self.ttt(Vector3((x, y, self.position.z+0.1)))
             p2 = self.ttt(p2)
 
         elif pr2.z < 0 and pr1.z > 0:
             if not p1.x == p2.x:
                 m = (p2.z-p1.z)/(p2.x-p1.x)
                 n = p1.z-m*p1.x
-                x = (n+math.tan(self.transform.rotation.x)*self.transform.position.x)/(math.tan(self.transform.rotation.x)-m)
+                x = (n+math.tan(self.rotation.x)*self.position.x)/(math.tan(self.rotation.x)-m)
             else:
                 x = p2.x
             if not p1.y == p2.y:
                 m = (p2.z-p1.z)/(p2.y-p1.y)
                 n = p2.z-m*p1.y
-                y = (n+math.tan(self.transform.rotation.y)*self.transform.position.y)/(math.tan(self.transform.rotation.y)-m)
+                y = (n+math.tan(self.rotation.y)*self.position.y)/(math.tan(self.rotation.y)-m)
             else:
                 y = p2.y
             p2 = self.ttt(Vector3((x, y, p2.z)))
@@ -223,28 +202,8 @@ class Camera:
 
 
         elif pr1.z>0 and pr2.z>0:
-            p1 = self.ttt(p1, te)
-            p2 = self.ttt(p2)
-#            m = math.tan(math.atan2((p2[1]-p1[1]),(p2[0]-p1[0])))
-#            n = p2[1]-m*p2[0]
-#            if m == 0:
-#                m = 0.00001
-#            if p2[0] > 500:
-#                p2 = (500, m*500 +n)
-#            if p2[1] > 500:
-#                p2 = ((500-n)/m, 500)
-#            if p1[0] > 500:
-#                p1 = (500, m*500 +n)
-#            if p1[1] > 500:
-#                p1 = ((500-n)/m, 500)
-#            if p2[0] < 0:
-#                p2 = (0, n)
-#            if p2[1] < 0:
-#                p2 = (-n/m, 0)
-#            if p1[0] < 0:
-#                p1 = (0, n)
-#            if p1[1] < 0:
-#                p1 = (-n/m, 0)
+            p1 = self.ttt(pr1)
+            p2 = self.ttt(pr2)
 
         if p1 != p2 and not(pr1.z<0 and pr2.z<0):
             try:
@@ -258,9 +217,8 @@ class Camera:
 
 
 c =  Camera()
-GameObject((0, 0, 30),(0,0), (50, 10, 2))
-GameObject((0, 0, 40),(0,0), (50, 10, 2))
-GameObject((0, 5, 35),(0,0), (50, 2, 10))
+GameObject((0, 0, 40))
+GameObject((0, 10, 35))
 GameObject((0,0, 30))
 running = True
 
@@ -274,23 +232,23 @@ while running:
     v = 0.01
     a = 0.001
     if keys[pygame.K_d]:
-        c.transform.move((v, 0, 0))
+        c.move((v, 0, 0))
     if keys[pygame.K_a]:
-        c.transform.move((-v, 0, 0))
+        c.move((-v, 0, 0))
     if keys[pygame.K_w]:
-        c.transform.move((0, 0, v))
+        c.move((0, 0, v))
     if keys[pygame.K_s]:
-        c.transform.move((0, 0, -v))
+        c.move((0, 0, -v))
     if keys[pygame.K_RIGHT]:
-        c.transform.rotation.x-=a
+        c.rotate((-a,0))
     if keys[pygame.K_LEFT]:
-        c.transform.rotation.x+=a
-    if keys[pygame.K_UP]:
-        c.transform.rotation.y+=a
-    if keys[pygame.K_DOWN]:
-        c.transform.rotation.y-=a
+        c.rotate((a,0))
+    #if keys[pygame.K_UP]:
+    #    c.rotate((0,a))
+    #if keys[pygame.K_DOWN]:
+    #    c.rotate((0, -a))
     if keys[pygame.K_LSHIFT]:
-        c.transform.move((0, v, 0))
+        c.move((0, v, 0))
     if keys[pygame.K_LCTRL]:
-        c.transform.move((0, -v, 0))
+        c.move((0, -v, 0))
     pygame.display.update()
