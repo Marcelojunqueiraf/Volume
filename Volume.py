@@ -131,7 +131,7 @@ class GameObject:
         self.model = Model()
         self.allGO.append(self)
 
-    def drawAll(self, cam):
+    def drawAll(cam):
         for go in GameObject.allGO:
             go.draw(cam)
 

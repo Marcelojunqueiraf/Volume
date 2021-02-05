@@ -129,23 +129,25 @@ class GameObject:
         cam.drawLine(p[4],p[5])
         cam.drawLine(p[6],p[7])
 
-
+#Class that defines how objects are rendered
 class Camera:
     def __init__(self, pos=(0,0,0), rot=(0,0), openning = 1):
         self.position = Vector3(pos)
         self.rotation = rot
         self.op = openning #oppening is an angle in radians
 
+    #Change the camera's position
     def move(self, v):
         if type(v)==tuple:
             v = Vector3(v)
         v.rotateX(-self.rotation[1])
         v.rotateY(-self.rotation[0])
         self.position += v
+    #Change Camera's rotation
     def rotate(self, a=(0,0)):
         r = self.rotation
         self.rotation = (r[0]+a[0],r[1]+a[1])
-
+    
     def ttt(self, o=(0,0,0), te = False):
         p = self.relativePos(o)
         d = math.tan(self.op/2)*p.z
@@ -215,9 +217,8 @@ class Camera:
 
 
 c =  Camera()
-#GameObject((0, 0, 30),(0,0), (50, 10, 2))
-#GameObject((0, 0, 40),(0,0), (50, 10, 2))
-#GameObject((0, 5, 35),(0,0), (50, 2, 10))
+GameObject((0, 0, 40))
+GameObject((0, 10, 35))
 GameObject((0,0, 30))
 running = True
 
@@ -242,10 +243,10 @@ while running:
         c.rotate((-a,0))
     if keys[pygame.K_LEFT]:
         c.rotate((a,0))
-    if keys[pygame.K_UP]:
-        c.rotate((0,a))
-    if keys[pygame.K_DOWN]:
-        c.rotate((0, -a))
+    #if keys[pygame.K_UP]:
+    #    c.rotate((0,a))
+    #if keys[pygame.K_DOWN]:
+    #    c.rotate((0, -a))
     if keys[pygame.K_LSHIFT]:
         c.move((0, v, 0))
     if keys[pygame.K_LCTRL]:
