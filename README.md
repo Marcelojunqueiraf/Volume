@@ -8,3 +8,4 @@ A Raw 3D engine made in python using pygame
 * A lot about how things are rendered in 3D
 * The basic of object oriented programming and code architecture
 * A lot of python
+![printscreen of the application](./Print.jpeg)
